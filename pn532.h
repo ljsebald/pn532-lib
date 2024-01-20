@@ -96,6 +96,7 @@ extern "C" {
 #define PN532_I2C_READYTIMEOUT              (20)
 
 #define PN532_MIFARE_ISO14443A              (0x00)
+#define PN532_FELICA                        (0x01)
 
 // Mifare Commands
 #define MIFARE_CMD_AUTH_A                   (0x60)
@@ -114,6 +115,17 @@ extern "C" {
 #define MIFARE_UID_TRIPLE_LENGTH            (10)
 #define MIFARE_KEY_LENGTH                   (6)
 #define MIFARE_BLOCK_LENGTH                 (16)
+
+// FeliCa Commands
+#define FELICA_CMD_POLL                     (0x00)
+#define FELICA_CMD_REQUEST_SERVICE          (0x02)
+#define FELICA_CMD_REQUEST_RESPONSE         (0x04)
+#define FELICA_CMD_READ_NO_CRYPT            (0x06)
+#define FELICA_CMD_WRITE_NO_CRYPT           (0x08)
+#define FELICA_CMD_REQUEST_SYSTEM_CODE      (0x0C)
+
+#define FELICA_POLL_NONE                    (0x00)
+#define FELICA_POLL_SYSTEM_CODE             (0x01)
 
 // NTAG2xx Commands
 #define NTAG2XX_BLOCK_LENGTH                (4)
@@ -262,6 +274,9 @@ int PN532_MifareClassicReadBlock(PN532* pn532, uint8_t* response, uint16_t block
 int PN532_MifareClassicWriteBlock(PN532* pn532, uint8_t* data, uint16_t block_number);
 int PN532_Ntag2xxReadBlock(PN532* pn532, uint8_t* response, uint16_t block_number);
 int PN532_Ntag2xxWriteBlock(PN532* pn532, uint8_t* data, uint16_t block_number);
+int PN532_FelicaPoll(PN532* pn532, uint16_t syscode, uint8_t reqcode,
+                     uint8_t idm_out[8], uint8_t pmm_out[8],
+                     uint16_t* syscode_out);
 int PN532_ReadGpio(PN532* pn532, uint8_t* pins_state);
 bool PN532_ReadGpioP(PN532* pn532, uint8_t pin_number);
 bool PN532_ReadGpioI(PN532* pn532, uint8_t pin_number);

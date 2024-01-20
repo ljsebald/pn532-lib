@@ -28,6 +28,7 @@
  **************************************************************************/
 
 #include <stdio.h>
+#include <string.h>
 #include "pn532.h"
 
 const uint8_t PN532_ACK[] = {0x00, 0x00, 0xFF, 0x00, 0xFF, 0x00};
@@ -385,6 +386,44 @@ int PN532_Ntag2xxWriteBlock(PN532* pn532, uint8_t* data, uint16_t block_number) 
     PN532_CallFunction(pn532, PN532_COMMAND_INDATAEXCHANGE, response,
                        sizeof(response), params, sizeof(params), PN532_DEFAULT_TIMEOUT);
     return response[0];
+}
+
+int PN532_FelicaPoll(PN532* pn532, uint16_t syscode, uint8_t reqcode,
+                     uint8_t idm_out[8], uint8_t pmm_out[8],
+                     uint16_t* syscode_out) {
+    uint8_t params[7] = {
+        0x01, PN532_FELICA, FELICA_CMD_POLL, (syscode >> 8) & 0xff,
+        (syscode & 0xff), reqcode, 0
+    };
+    uint8_t output[22];
+    int status;
+
+    status = PN532_CallFunction(pn532, PN532_COMMAND_INLISTPASSIVETARGET,
+                                output, sizeof(output), params, sizeof(params),
+                                PN532_DEFAULT_TIMEOUT);
+    if(status < 0)
+        return status;
+
+    if(output[0] != 0x01) {
+        pn532->log("More than one card detected!");
+        return PN532_STATUS_ERROR;
+    }
+
+    /* Grab our response length from the response */
+    status = output[2];
+    if(status != 18 && status != 20) {
+        pn532->log("Unknown response length detected!");
+        return PN532_STATUS_ERROR;
+    }
+
+    /* Copy out the response */
+    memcpy(idm_out, &output[4], 8);
+    memcpy(pmm_out, &output[12], 8);
+
+    if(status == 20 && syscode_out)
+        *syscode_out = (output[20] << 8) | (output[21]);
+
+    return PN532_STATUS_OK;
 }
 
 /**
