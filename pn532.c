@@ -392,7 +392,7 @@ int PN532_FelicaPoll(PN532* pn532, uint16_t syscode, uint8_t reqcode,
                      uint8_t idm_out[8], uint8_t pmm_out[8],
                      uint16_t* syscode_out) {
     uint8_t params[7] = {
-        0x01, PN532_FELICA, FELICA_CMD_POLL, (syscode >> 8) & 0xff,
+        0x01, PN532_FELICA_212KBPS, FELICA_CMD_POLL, (syscode >> 8) & 0xff,
         (syscode & 0xff), reqcode, 0
     };
     uint8_t output[22];

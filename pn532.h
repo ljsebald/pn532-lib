@@ -96,7 +96,8 @@ extern "C" {
 #define PN532_I2C_READYTIMEOUT              (20)
 
 #define PN532_MIFARE_ISO14443A              (0x00)
-#define PN532_FELICA                        (0x01)
+#define PN532_FELICA_212KBPS                (0x01)
+#define PN532_FELICA_424KBPS                (0x02)
 
 // Mifare Commands
 #define MIFARE_CMD_AUTH_A                   (0x60)
