@@ -25,7 +25,9 @@
 #define PN532_PICO_H
 
 #include "pn532.h"
+
 #include "pico.h"
+#include "hardware/i2c.h"
 
 void PN532_I2C_Init(PN532 *pn532, i2c_inst_t *i2c, uint reset_pin,
                     uint req_pin);
