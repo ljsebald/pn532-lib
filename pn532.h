@@ -125,6 +125,8 @@ extern "C" {
 #define FELICA_CMD_WRITE_NO_CRYPT           (0x08)
 #define FELICA_CMD_REQUEST_SYSTEM_CODE      (0x0C)
 
+#define FELICA_POLL_SYSTEM_CODE_ANY         (0xFFFF)
+
 #define FELICA_POLL_NONE                    (0x00)
 #define FELICA_POLL_SYSTEM_CODE             (0x01)
 

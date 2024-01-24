@@ -39,7 +39,7 @@ static i2c_inst_t *_i2c = NULL;
 
 /* Currently, only I2C mode is supported here. */
 static int PN532_Reset(void) {
-    if(_reset_pin != 0xff) {
+    if(_reset_pin != PN532_NO_PIN) {
         gpio_put(_reset_pin, true);
         sleep_ms(100);
         gpio_put(_reset_pin, false);
@@ -83,11 +83,10 @@ static bool PN532_I2C_WaitReady(uint32_t timeout) {
     timeout *= 1000;
 
     for(;;) {
-        if(i2c_read_blocking(_i2c, I2C_ADDR, &status, 1, false) != 1)
-            return false;
-
-        if(status == 1)
-            return true;
+        if(i2c_read_blocking(_i2c, I2C_ADDR, &status, 1, false) == 1) {
+            if(status == 1)
+                return true;
+        }
 
         if(elapsed + 5 > timeout)
             return false;
@@ -98,7 +97,7 @@ static bool PN532_I2C_WaitReady(uint32_t timeout) {
 }
 
 static int PN532_I2C_Wakeup(void) {
-    if(_req_pin != 0xff) {
+    if(_req_pin != PN532_NO_PIN) {
         gpio_put(_req_pin, false);
         sleep_ms(100);
         gpio_put(_req_pin, true);
