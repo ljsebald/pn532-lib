@@ -389,7 +389,7 @@ int PN532_Ntag2xxWriteBlock(PN532* pn532, uint8_t* data, uint16_t block_number) 
 }
 
 int PN532_FelicaPoll(PN532* pn532, uint16_t syscode, uint8_t reqcode,
-                     uint8_t idm_out[8], uint8_t pmm_out[8],
+                     uint32_t timeout, uint8_t idm_out[8], uint8_t pmm_out[8],
                      uint16_t* syscode_out) {
     uint8_t params[7] = {
         0x01, PN532_FELICA_212KBPS, FELICA_CMD_POLL, (syscode >> 8) & 0xff,
@@ -400,7 +400,7 @@ int PN532_FelicaPoll(PN532* pn532, uint16_t syscode, uint8_t reqcode,
 
     status = PN532_CallFunction(pn532, PN532_COMMAND_INLISTPASSIVETARGET,
                                 output, sizeof(output), params, sizeof(params),
-                                PN532_DEFAULT_TIMEOUT);
+                                timeout);
     if(status < 0)
         return status;
 

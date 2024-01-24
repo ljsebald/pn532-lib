@@ -278,7 +278,7 @@ int PN532_MifareClassicWriteBlock(PN532* pn532, uint8_t* data, uint16_t block_nu
 int PN532_Ntag2xxReadBlock(PN532* pn532, uint8_t* response, uint16_t block_number);
 int PN532_Ntag2xxWriteBlock(PN532* pn532, uint8_t* data, uint16_t block_number);
 int PN532_FelicaPoll(PN532* pn532, uint16_t syscode, uint8_t reqcode,
-                     uint8_t idm_out[8], uint8_t pmm_out[8],
+                     uint32_t timeout, uint8_t idm_out[8], uint8_t pmm_out[8],
                      uint16_t* syscode_out);
 int PN532_ReadGpio(PN532* pn532, uint8_t* pins_state);
 bool PN532_ReadGpioP(PN532* pn532, uint8_t pin_number);
