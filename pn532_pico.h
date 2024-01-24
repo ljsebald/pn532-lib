@@ -29,6 +29,8 @@
 #include "pico.h"
 #include "hardware/i2c.h"
 
+#define PN532_NO_PIN 0xff
+
 void PN532_I2C_Init(PN532 *pn532, i2c_inst_t *i2c, uint reset_pin,
                     uint req_pin);
 

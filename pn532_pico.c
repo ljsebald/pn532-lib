@@ -29,7 +29,7 @@
 #include "hardware/gpio.h"
 #include "hardware/i2c.h"
 
-#include "pn532.h"
+#include "pn532_pico.h"
 
 static uint _req_pin = 0xff;
 static uint _reset_pin = 0xff;
@@ -89,7 +89,7 @@ static bool PN532_I2C_WaitReady(uint32_t timeout) {
         if(status == 1)
             return true;
 
-        if(elapsed + 5 < timeout)
+        if(elapsed + 5 > timeout)
             return false;
 
         sleep_ms(5);
@@ -119,10 +119,11 @@ void PN532_I2C_Init(PN532 *pn532, i2c_inst_t *i2c, uint reset_pin,
 
     _req_pin = req_pin;
     _reset_pin = reset_pin;
+    _i2c = i2c;
 
-    if(_req_pin < 0xff)
+    if(_req_pin != PN532_NO_PIN)
         gpio_set_dir(_req_pin, true);
-    if(_reset_pin < 0xff)
+    if(_reset_pin != PN532_NO_PIN)
         gpio_set_dir(_reset_pin, true);
 
     pn532->reset();
