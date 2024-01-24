@@ -73,7 +73,7 @@ int main(void) {
     uint8_t idm[8], pmm[8];
 
     stdio_init_all();
-    
+
     sleep_ms(5000);
     printf("Initializing PN532...\n");
     if((err = init_pn532())) {
