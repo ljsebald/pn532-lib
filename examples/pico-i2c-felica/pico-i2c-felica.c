@@ -83,7 +83,7 @@ int main(void) {
 
     for(;;) {
         printf("Polling for a FeliCa card!\n");
-        err = PN532_FelicaPoll(&nfc, FELICA_POLL_SYSTEM_CODE_ANY,
+        err = PN532_FelicaRead(&nfc, FELICA_POLL_SYSTEM_CODE_ANY,
                                FELICA_POLL_SYSTEM_CODE, idm, pmm, &syscode, 2);
         if(err == PN532_STATUS_OK) {
             printf("System Code: %hu\n", syscode);

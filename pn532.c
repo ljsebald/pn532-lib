@@ -231,39 +231,43 @@ int PN532_SamConfiguration(PN532* pn532) {
     return PN532_STATUS_OK;
 }
 
-/**
-  * @brief: Wait for a MiFare card to be available and return its UID when found.
-  *     Will wait up to timeout seconds and return None if no card is found,
-  *     otherwise a bytearray with the UID of the found card is returned.
-  * @retval: Length of UID, or -1 if error.
-  */
-int PN532_ReadPassiveTarget(
-    PN532* pn532,
-    uint8_t* response,
-    uint8_t card_baud,
-    uint32_t timeout
-) {
-    // Send passive read command for 1 card.  Expect at most a 7 byte UUID.
-    uint8_t params[] = {0x01, card_baud};
-    uint8_t buff[19];
-    int length = PN532_CallFunction(pn532, PN532_COMMAND_INLISTPASSIVETARGET,
-                        buff, sizeof(buff), params, sizeof(params), timeout);
-    if (length < 0) {
-        return PN532_STATUS_ERROR; // No card found
-    }
-    // Check only 1 card with up to a 7 byte UID is present.
-    if (buff[0] != 0x01) {
+int PN532_ListenMifare(PN532 *pn532, uint8_t baud, uint32_t timeout) {
+    const uint8_t params[2] = { 0x01, baud };
+
+    return PN532_SendCommand(pn532, PN532_COMMAND_INLISTPASSIVETARGET, params,
+                             sizeof(params), timeout);
+}
+
+int PN532_GetMifare(PN532 *pn532, uint8_t uid_out[7], uint32_t timeout) {
+    uint8_t buf[19];
+    int err;
+
+    if((err = PN532_ProcessResponse(pn532, PN532_COMMAND_INLISTPASSIVETARGET,
+                                    buf, sizeof(buf), timeout)) < 0)
+        return err;
+
+    if(buf[0] != 0x01) {
         pn532->log("More than one card detected!");
         return PN532_STATUS_ERROR;
     }
-    if (buff[5] > 7) {
+
+    if(buf[5] > 7) {
         pn532->log("Found card with unexpectedly long UID!");
         return PN532_STATUS_ERROR;
     }
-    for (uint8_t i = 0; i < buff[5]; i++) {
-        response[i] = buff[6 + i];
-    }
-    return buff[5];
+
+    memcpy(uid_out, &buf[6], buf[5]);
+    return buf[5];
+}
+
+int PN532_ReadMifare(PN532 *pn532, uint8_t baud, uint8_t uid_out[7],
+                     uint32_t timeout) {
+    int err;
+
+    if((err = PN532_ListenMifare(pn532, baud, timeout)) < 0)
+        return err;
+
+    return PN532_GetMifare(pn532, uid_out, timeout);
 }
 
 /**
@@ -407,8 +411,8 @@ int PN532_FelicaListen(PN532 *pn532, uint16_t syscode, uint8_t reqcode,
                              params, sizeof(params), timeout);
 }
 
-int PN532_FelicaRead(PN532 *pn532, uint8_t idm_out[8], uint8_t pmm_out[8],
-                     uint16_t *syscode_out, uint32_t timeout) {
+int PN532_FelicaGet(PN532 *pn532, uint8_t idm_out[8], uint8_t pmm_out[8],
+                    uint16_t *syscode_out, uint32_t timeout) {
     int err;
     uint8_t buf[22];
 
@@ -437,7 +441,7 @@ int PN532_FelicaRead(PN532 *pn532, uint8_t idm_out[8], uint8_t pmm_out[8],
     return PN532_STATUS_OK;
 }
 
-int PN532_FelicaPoll(PN532 *pn532, uint16_t syscode, uint8_t reqcode,
+int PN532_FelicaRead(PN532 *pn532, uint16_t syscode, uint8_t reqcode,
                      uint8_t idm_out[8], uint8_t pmm_out[8],
                      uint16_t *syscode_out, uint32_t timeout) {
     int err;
@@ -445,7 +449,7 @@ int PN532_FelicaPoll(PN532 *pn532, uint16_t syscode, uint8_t reqcode,
     if((err = PN532_FelicaListen(pn532, syscode, reqcode, timeout)) < 0)
         return err;
 
-    return PN532_FelicaRead(pn532, idm_out, pmm_out, syscode_out, timeout);
+    return PN532_FelicaGet(pn532, idm_out, pmm_out, syscode_out, timeout);
 }
 
 /**

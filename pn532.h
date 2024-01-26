@@ -279,17 +279,22 @@ int PN532_CallFunction(PN532 *pn532, uint8_t command, uint8_t *response,
                        size_t params_length, uint32_t timeout);
 int PN532_GetFirmwareVersion(PN532* pn532, uint8_t* version);
 int PN532_SamConfiguration(PN532* pn532);
-int PN532_ReadPassiveTarget(PN532* pn532, uint8_t* response, uint8_t card_baud, uint32_t timeout);
+
+int PN532_ListenMifare(PN532 *pn532, uint8_t baud, uint32_t timeout);
+int PN532_GetMifare(PN532 *pn532, uint8_t uid_out[7], uint32_t timeout);
+int PN532_ReadMifare(PN532 *pn532, uint8_t baud, uint8_t uid_out[7],
+                     uint32_t timeout);
+
 int PN532_MifareClassicAuthenticateBlock(PN532* pn532, uint8_t* uid, uint8_t uid_length, uint16_t block_number, uint16_t key_number, uint8_t* key);
 int PN532_MifareClassicReadBlock(PN532* pn532, uint8_t* response, uint16_t block_number);
 int PN532_MifareClassicWriteBlock(PN532* pn532, uint8_t* data, uint16_t block_number);
 int PN532_Ntag2xxReadBlock(PN532* pn532, uint8_t* response, uint16_t block_number);
 int PN532_Ntag2xxWriteBlock(PN532* pn532, uint8_t* data, uint16_t block_number);
-int PN532_FelicaPoll(PN532* pn532, uint16_t syscode, uint8_t reqcode,
+int PN532_FelicaRead(PN532* pn532, uint16_t syscode, uint8_t reqcode,
                      uint8_t idm_out[8], uint8_t pmm_out[8],
                      uint16_t* syscode_out, uint32_t timeout);
-int PN532_FelicaRead(PN532 *pn532, uint8_t idm_out[8], uint8_t pmm_out[8],
-                     uint16_t *syscode_out, uint32_t timeout);
+int PN532_FelicaGet(PN532 *pn532, uint8_t idm_out[8], uint8_t pmm_out[8],
+                    uint16_t *syscode_out, uint32_t timeout);
 int PN532_FelicaListen(PN532 *pn532, uint16_t syscode, uint8_t reqcode,
                        uint32_t timeout);
 int PN532_ReadGpio(PN532* pn532, uint8_t* pins_state);
