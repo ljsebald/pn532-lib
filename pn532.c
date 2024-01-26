@@ -146,7 +146,7 @@ int PN532_ProcessResponse(PN532 *pn532, uint8_t command, uint8_t *response,
     return flen - 2;
 }
 
-int PN532_SendCommand(PN532 *pn532, uint8_t command, uint8_t *params,
+int PN532_SendCommand(PN532 *pn532, uint8_t command, const uint8_t *params,
                       size_t params_len, uint32_t timeout) {
     uint8_t buf[params_len > 4 ? params_len + 2 : 6];
 
@@ -189,7 +189,7 @@ int PN532_SendCommand(PN532 *pn532, uint8_t command, uint8_t *params,
   * @retval: Returns the length of response or -1 if error.
   */
 int PN532_CallFunction(PN532 *pn532, uint8_t command, uint8_t *response,
-                       size_t response_length, uint8_t *params,
+                       size_t response_length, const uint8_t *params,
                        size_t params_length, uint32_t timeout) {
     int err;
 
@@ -396,42 +396,56 @@ int PN532_Ntag2xxWriteBlock(PN532* pn532, uint8_t* data, uint16_t block_number) 
     return response[0];
 }
 
-int PN532_FelicaPoll(PN532* pn532, uint16_t syscode, uint8_t reqcode,
-                     uint32_t timeout, uint8_t idm_out[8], uint8_t pmm_out[8],
-                     uint16_t* syscode_out) {
-    uint8_t params[7] = {
+int PN532_FelicaListen(PN532 *pn532, uint16_t syscode, uint8_t reqcode,
+                       uint32_t timeout) {
+    const uint8_t params[7] = {
         0x01, PN532_FELICA_212KBPS, FELICA_CMD_POLL, (syscode >> 8) & 0xff,
         (syscode & 0xff), reqcode, 0
     };
-    uint8_t output[22];
-    int status;
 
-    status = PN532_CallFunction(pn532, PN532_COMMAND_INLISTPASSIVETARGET,
-                                output, sizeof(output), params, sizeof(params),
-                                timeout);
-    if(status < 0)
-        return status;
+    return PN532_SendCommand(pn532, PN532_COMMAND_INLISTPASSIVETARGET,
+                             params, sizeof(params), timeout);
+}
 
-    if(output[0] != 0x01) {
+int PN532_FelicaRead(PN532 *pn532, uint8_t idm_out[8], uint8_t pmm_out[8],
+                     uint16_t *syscode_out, uint32_t timeout) {
+    int err;
+    uint8_t buf[22];
+
+    if((err = PN532_ProcessResponse(pn532, PN532_COMMAND_INLISTPASSIVETARGET,
+                                    buf, sizeof(buf), timeout)) < 0)
+        return err;
+
+    if(buf[0] != 0x01) {
         pn532->log("More than one card detected!");
         return PN532_STATUS_ERROR;
     }
 
     /* Grab our response length from the response */
-    status = output[2];
-    if(status != 18 && status != 20) {
+    if(buf[2] != 18 && buf[2] != 20) {
         pn532->log("Unknown response length detected!");
         return PN532_STATUS_ERROR;
     }
 
     /* Copy out the response */
-    memcpy(idm_out, &output[4], 8);
-    memcpy(pmm_out, &output[12], 8);
+    memcpy(idm_out, &buf[4], 8);
+    memcpy(pmm_out, &buf[12], 8);
 
-    if(status == 20 && syscode_out)
-        *syscode_out = (output[20] << 8) | (output[21]);
+    if(buf[2] == 20 && syscode_out)
+        *syscode_out = (buf[20] << 8) | (buf[21]);
 
     return PN532_STATUS_OK;
+}
+
+int PN532_FelicaPoll(PN532 *pn532, uint16_t syscode, uint8_t reqcode,
+                     uint8_t idm_out[8], uint8_t pmm_out[8],
+                     uint16_t *syscode_out, uint32_t timeout) {
+    int err;
+
+    if((err = PN532_FelicaListen(pn532, syscode, reqcode, timeout)) < 0)
+        return err;
+
+    return PN532_FelicaRead(pn532, idm_out, pmm_out, syscode_out, timeout);
 }
 
 /**

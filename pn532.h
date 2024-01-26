@@ -270,12 +270,12 @@ typedef struct _PN532 {
 int PN532_WriteFrame(PN532* pn532, uint8_t* data, size_t length);
 int PN532_ReadFrame(PN532* pn532, uint8_t* buff, size_t length);
 
-int PN532_SendCommand(PN532 *pn532, uint8_t command, uint8_t *params,
+int PN532_SendCommand(PN532 *pn532, uint8_t command, const uint8_t *params,
                       size_t params_len, uint32_t timeout);
 int PN532_ProcessResponse(PN532 *pn532, uint8_t command, uint8_t *response,
                           size_t response_len, uint32_t timeout);
 int PN532_CallFunction(PN532 *pn532, uint8_t command, uint8_t *response,
-                       size_t response_length, uint8_t *params,
+                       size_t response_length, const uint8_t *params,
                        size_t params_length, uint32_t timeout);
 int PN532_GetFirmwareVersion(PN532* pn532, uint8_t* version);
 int PN532_SamConfiguration(PN532* pn532);
@@ -286,8 +286,12 @@ int PN532_MifareClassicWriteBlock(PN532* pn532, uint8_t* data, uint16_t block_nu
 int PN532_Ntag2xxReadBlock(PN532* pn532, uint8_t* response, uint16_t block_number);
 int PN532_Ntag2xxWriteBlock(PN532* pn532, uint8_t* data, uint16_t block_number);
 int PN532_FelicaPoll(PN532* pn532, uint16_t syscode, uint8_t reqcode,
-                     uint32_t timeout, uint8_t idm_out[8], uint8_t pmm_out[8],
-                     uint16_t* syscode_out);
+                     uint8_t idm_out[8], uint8_t pmm_out[8],
+                     uint16_t* syscode_out, uint32_t timeout);
+int PN532_FelicaRead(PN532 *pn532, uint8_t idm_out[8], uint8_t pmm_out[8],
+                     uint16_t *syscode_out, uint32_t timeout);
+int PN532_FelicaListen(PN532 *pn532, uint16_t syscode, uint8_t reqcode,
+                       uint32_t timeout);
 int PN532_ReadGpio(PN532* pn532, uint8_t* pins_state);
 bool PN532_ReadGpioP(PN532* pn532, uint8_t pin_number);
 bool PN532_ReadGpioI(PN532* pn532, uint8_t pin_number);
