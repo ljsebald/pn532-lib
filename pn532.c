@@ -231,14 +231,14 @@ int PN532_SamConfiguration(PN532* pn532) {
     return PN532_STATUS_OK;
 }
 
-int PN532_ListenMifare(PN532 *pn532, uint8_t baud, uint32_t timeout) {
+int PN532_MifareListen(PN532 *pn532, uint8_t baud, uint32_t timeout) {
     const uint8_t params[2] = { 0x01, baud };
 
     return PN532_SendCommand(pn532, PN532_COMMAND_INLISTPASSIVETARGET, params,
                              sizeof(params), timeout);
 }
 
-int PN532_GetMifare(PN532 *pn532, uint8_t uid_out[7], uint32_t timeout) {
+int PN532_MifareGet(PN532 *pn532, uint8_t uid_out[7], uint32_t timeout) {
     uint8_t buf[19];
     int err;
 
@@ -260,14 +260,14 @@ int PN532_GetMifare(PN532 *pn532, uint8_t uid_out[7], uint32_t timeout) {
     return buf[5];
 }
 
-int PN532_ReadMifare(PN532 *pn532, uint8_t baud, uint8_t uid_out[7],
+int PN532_MifareRead(PN532 *pn532, uint8_t baud, uint8_t uid_out[7],
                      uint32_t timeout) {
     int err;
 
-    if((err = PN532_ListenMifare(pn532, baud, timeout)) < 0)
+    if((err = PN532_MifareListen(pn532, baud, timeout)) < 0)
         return err;
 
-    return PN532_GetMifare(pn532, uid_out, timeout);
+    return PN532_MifareGet(pn532, uid_out, timeout);
 }
 
 /**

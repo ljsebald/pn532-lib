@@ -280,9 +280,9 @@ int PN532_CallFunction(PN532 *pn532, uint8_t command, uint8_t *response,
 int PN532_GetFirmwareVersion(PN532* pn532, uint8_t* version);
 int PN532_SamConfiguration(PN532* pn532);
 
-int PN532_ListenMifare(PN532 *pn532, uint8_t baud, uint32_t timeout);
-int PN532_GetMifare(PN532 *pn532, uint8_t uid_out[7], uint32_t timeout);
-int PN532_ReadMifare(PN532 *pn532, uint8_t baud, uint8_t uid_out[7],
+int PN532_MifareListen(PN532 *pn532, uint8_t baud, uint32_t timeout);
+int PN532_MifareGet(PN532 *pn532, uint8_t uid_out[7], uint32_t timeout);
+int PN532_MifareRead(PN532 *pn532, uint8_t baud, uint8_t uid_out[7],
                      uint32_t timeout);
 
 int PN532_MifareClassicAuthenticateBlock(PN532* pn532, uint8_t* uid, uint8_t uid_length, uint16_t block_number, uint16_t key_number, uint8_t* key);
