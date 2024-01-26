@@ -1,31 +1,28 @@
-/**************************************************************************
- *  @file     pn532.c
- *  @author   Yehui from Waveshare
- *  @license  BSD
- *  
- *  This is a library for the Waveshare PN532 NFC modules
- *  
- *  Check out the links above for our tutorials and wiring diagrams 
- *  These chips use SPI communicate.
- *  
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documnetation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to  whom the Software is
- * furished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS OR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- **************************************************************************/
+/*
+   pn532.c
+   Copyright (C) 2024 Lawrence Sebald
+
+   Original Author: Yehui from Waveshare
+
+   Permission is hereby granted, free of charge, to any person obtaining a copy
+   of this software and associated documnetation files (the "Software"), to deal
+   in the Software without restriction, including without limitation the rights
+   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   copies of the Software, and to permit persons to  whom the Software is
+   furished to do so, subject to the following conditions:
+
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS OR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   THE SOFTWARE.
+*/
+
 
 #include <stdio.h>
 #include <string.h>
@@ -42,7 +39,7 @@ const uint8_t PN532_FRAME_START[] = {0x00, 0x00, 0xFF};
   *     Note that less than length bytes might be returned!
   * @retval: Returns -1 if there is an error parsing the frame.  
   */
-int PN532_WriteFrame(PN532* pn532, uint8_t* data, uint16_t length) {
+int PN532_WriteFrame(PN532* pn532, uint8_t* data, size_t length) {
     if (length > PN532_FRAME_MAX_LENGTH || length < 1) {
         return PN532_STATUS_ERROR; // Data must be array of 1 to 255 bytes.
     }
@@ -82,7 +79,7 @@ int PN532_WriteFrame(PN532* pn532, uint8_t* data, uint16_t length) {
   *     Note that less than length bytes might be returned!
   * @retval: Returns frame length or -1 if there is an error parsing the frame.  
   */
-int PN532_ReadFrame(PN532* pn532, uint8_t* response, uint16_t length) {
+int PN532_ReadFrame(PN532* pn532, uint8_t* response, size_t length) {
     uint8_t buff[PN532_FRAME_MAX_LENGTH + 7];
     uint8_t checksum = 0;
     // Read frame with expected length of data.
@@ -127,6 +124,56 @@ int PN532_ReadFrame(PN532* pn532, uint8_t* response, uint16_t length) {
     return frame_len;
 }
 
+int PN532_ProcessResponse(PN532 *pn532, uint8_t command, uint8_t *response,
+                          size_t response_len, uint32_t timeout) {
+    uint8_t buf[response_len + 2];
+    int flen;
+
+    if(!pn532->wait_ready(timeout))
+        return PN532_STATUS_TIMEOUT;
+
+    /* Grab the response from the device */
+    flen = PN532_ReadFrame(pn532, buf, response_len + 2);
+    if(buf[0] != PN532_PN532TOHOST || buf[1] != (command + 1)) {
+        pn532->log("Received unexpected command response!");
+        return PN532_STATUS_ERROR;
+    }
+
+    /* Copy out the response and return the number of bytes read */
+    if(response)
+        memcpy(response, buf + 2, response_len);
+
+    return flen - 2;
+}
+
+int PN532_SendCommand(PN532 *pn532, uint8_t command, uint8_t *params,
+                      size_t params_len, uint32_t timeout) {
+    uint8_t buf[params_len > 4 ? params_len + 2 : 6];
+
+    /* Build the command frame */
+    buf[0] = PN532_HOSTTOPN532;
+    buf[1] = command;
+    memcpy(&buf[2], params, params_len);
+
+    /* Write the frame and wait for the device to accept it */
+    if(PN532_WriteFrame(pn532, buf, params_len + 2) != PN532_STATUS_OK) {
+        pn532->log("Error writing frame to PN532");
+        return PN532_STATUS_ERROR;
+    }
+
+    if(!pn532->wait_ready(timeout))
+        return PN532_STATUS_TIMEOUT;
+
+    /* Read and verify the ACK */
+    pn532->read_data(buf, sizeof(PN532_ACK));
+    if(memcmp(buf, PN532_ACK, sizeof(PN532_ACK))) {
+        pn532->log("Did not receive expected ACK from PN532!");
+        return PN532_STATUS_ERROR;
+    }
+
+    return PN532_STATUS_OK;
+}
+
 /**
   * @brief: Send specified command to the PN532 and expect up to response_length.
   *     Will wait up to timeout seconds for a response and read a bytearray into
@@ -141,56 +188,17 @@ int PN532_ReadFrame(PN532* pn532, uint8_t* response, uint16_t length) {
   * @param timeout: timout of systick
   * @retval: Returns the length of response or -1 if error.
   */
-int PN532_CallFunction(
-    PN532* pn532,
-    uint8_t command,
-    uint8_t* response,
-    uint16_t response_length,
-    uint8_t* params,
-    uint16_t params_length,
-    uint32_t timeout
-) {
-    // Build frame data with command and parameters.
-    uint8_t buff[PN532_FRAME_MAX_LENGTH];
-    buff[0] = PN532_HOSTTOPN532;
-    buff[1] = command & 0xFF;
-    for (uint8_t i = 0; i < params_length; i++) {
-        buff[2 + i] = params[i];
-    }
-    // Send frame and wait for response.
-    if (PN532_WriteFrame(pn532, buff, params_length + 2) != PN532_STATUS_OK) {
-        pn532->wakeup();
-        pn532->log("Trying to wakeup");
-        return PN532_STATUS_ERROR;
-    }
-    if (!pn532->wait_ready(timeout)) {
-        return PN532_STATUS_ERROR;
-    }
-    // Verify ACK response and wait to be ready for function response.
-    pn532->read_data(buff, sizeof(PN532_ACK));
-    for (uint8_t i = 0; i < sizeof(PN532_ACK); i++) {
-        if (PN532_ACK[i] != buff[i]) {
-            pn532->log("Did not receive expected ACK from PN532!");
-            return PN532_STATUS_ERROR;
-        }
-    }
-    if (!pn532->wait_ready(timeout)) {
-        return PN532_STATUS_ERROR;
-    }
-    // Read response bytes.
-    int frame_len = PN532_ReadFrame(pn532, buff, response_length + 2);
+int PN532_CallFunction(PN532 *pn532, uint8_t command, uint8_t *response,
+                       size_t response_length, uint8_t *params,
+                       size_t params_length, uint32_t timeout) {
+    int err;
 
-    // Check that response is for the called function.
-    if (! ((buff[0] == PN532_PN532TOHOST) && (buff[1] == (command+1)))) {
-        pn532->log("Received unexpected command response!");
-        return PN532_STATUS_ERROR;
-    }
-    // Return response data.
-    for (uint8_t i = 0; i < response_length; i++) {
-        response[i] = buff[i + 2];
-    }
-    // The the number of bytes read
-    return frame_len - 2;
+    if((err = PN532_SendCommand(pn532, command, params, params_length,
+                                timeout)) != PN532_STATUS_OK)
+        return err;
+
+    return PN532_ProcessResponse(pn532, command, response, response_length,
+                                 timeout);
 }
 
 /**
@@ -510,7 +518,7 @@ int PN532_WriteGpio(PN532* pn532, uint8_t* pins_state) {
   * @retval: -1 if error
   */
 int PN532_WriteGpioP(PN532* pn532, uint8_t pin_number, bool pin_state) {
-    uint8_t pins_state[2];
+    uint8_t pins_state[3];
     uint8_t params[2];
     if (PN532_ReadGpio(pn532, pins_state) == PN532_STATUS_ERROR) {
         return PN532_STATUS_ERROR;

@@ -93,6 +93,9 @@ int main(void) {
                    pmm[1], pmm[2], pmm[3], pmm[4], pmm[5], pmm[6], pmm[7]);
             sleep_ms(2000);
         }
+        else if(err != PN532_STATUS_TIMEOUT) {
+            printf("Unknown error occurred!\n");
+        }
     }
 
     return 0;

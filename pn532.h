@@ -253,6 +253,7 @@ extern "C" {
 /* End: Official PN532 Errors Definitions */
 
 // Other Error Definitions
+#define PN532_STATUS_TIMEOUT                                            (-2)
 #define PN532_STATUS_ERROR                                              (-1)
 #define PN532_STATUS_OK                                                 (0)
 
@@ -266,9 +267,16 @@ typedef struct _PN532 {
 } PN532;
 
 
-int PN532_WriteFrame(PN532* pn532, uint8_t* data, uint16_t length);
-int PN532_ReadFrame(PN532* pn532, uint8_t* buff, uint16_t length);
-int PN532_CallFunction(PN532* pn532, uint8_t command, uint8_t* response, uint16_t response_length, uint8_t* params, uint16_t params_length, uint32_t timeout);
+int PN532_WriteFrame(PN532* pn532, uint8_t* data, size_t length);
+int PN532_ReadFrame(PN532* pn532, uint8_t* buff, size_t length);
+
+int PN532_SendCommand(PN532 *pn532, uint8_t command, uint8_t *params,
+                      size_t params_len, uint32_t timeout);
+int PN532_ProcessResponse(PN532 *pn532, uint8_t command, uint8_t *response,
+                          size_t response_len, uint32_t timeout);
+int PN532_CallFunction(PN532 *pn532, uint8_t command, uint8_t *response,
+                       size_t response_length, uint8_t *params,
+                       size_t params_length, uint32_t timeout);
 int PN532_GetFirmwareVersion(PN532* pn532, uint8_t* version);
 int PN532_SamConfiguration(PN532* pn532);
 int PN532_ReadPassiveTarget(PN532* pn532, uint8_t* response, uint8_t card_baud, uint32_t timeout);
