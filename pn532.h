@@ -290,6 +290,7 @@ int PN532_MifareClassicReadBlock(PN532* pn532, uint8_t* response, uint16_t block
 int PN532_MifareClassicWriteBlock(PN532* pn532, uint8_t* data, uint16_t block_number);
 int PN532_Ntag2xxReadBlock(PN532* pn532, uint8_t* response, uint16_t block_number);
 int PN532_Ntag2xxWriteBlock(PN532* pn532, uint8_t* data, uint16_t block_number);
+
 int PN532_FelicaRead(PN532* pn532, uint16_t syscode, uint8_t reqcode,
                      uint8_t idm_out[8], uint8_t pmm_out[8],
                      uint16_t* syscode_out, uint32_t timeout);
@@ -297,11 +298,6 @@ int PN532_FelicaGet(PN532 *pn532, uint8_t idm_out[8], uint8_t pmm_out[8],
                     uint16_t *syscode_out, uint32_t timeout);
 int PN532_FelicaListen(PN532 *pn532, uint16_t syscode, uint8_t reqcode,
                        uint32_t timeout);
-int PN532_ReadGpio(PN532* pn532, uint8_t* pins_state);
-bool PN532_ReadGpioP(PN532* pn532, uint8_t pin_number);
-bool PN532_ReadGpioI(PN532* pn532, uint8_t pin_number);
-int PN532_WriteGpio(PN532* pn532, uint8_t* pins_state);
-int PN532_WriteGpioP(PN532* pn532, uint8_t pin_number, bool pin_state);
 
 #ifdef __cplusplus
 }
